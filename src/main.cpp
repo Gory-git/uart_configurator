@@ -106,11 +106,12 @@ void loop()
 
 }
 
-bool saveParametersOnEEPROM(const Parameters& params)
+bool saveParametersOnEEPROM()
 {  
-  EEPROMData data;  data.magic = MAGIC_NUMBER;  
-  data.params = params;  
-  data.crc = CALC_CRC32(&params, sizeof(Parameters));    
+  EEPROMData data;  
+  data.magic = MAGIC_NUMBER;  
+  data.params = parameters;  
+  data.crc = CALC_CRC32(&data.params, sizeof(Parameters));    
   #if defined(ESP32) || defined(ESP8266)    
     EEPROM.begin(EEPROM_SIZE);  
   #endif    
@@ -124,7 +125,7 @@ bool saveParametersOnEEPROM(const Parameters& params)
   #endif
 }
 
-bool loadParametersFromEEPROM(Parameters& params)
+bool loadParametersFromEEPROM()
 {  
   EEPROMData data;    
   #if defined(ESP32) || defined(ESP8266)    
@@ -145,9 +146,29 @@ bool loadParametersFromEEPROM(Parameters& params)
     Serial.println("EEPROM corrotta");    
     return false;  
   }    
-  params = data.params;  
+  parameters = data.params;  
   return true;
 }
+
+void clearEEPROM()
+{
+  #if defined(ESP32) || defined(ESP8266)
+    EEPROM.begin(EEPROM_SIZE);
+  #endif
+  
+  for (int i = 0; i < sizeof(EEPROMData); i++)
+  {
+    EEPROM.write(EEPROM_START_ADDR + i, 0xFF);
+  }
+  
+  #if defined(ESP32) || defined(ESP8266)
+    EEPROM.commit();
+    EEPROM.end();
+  #endif
+  
+  Serial.println("EEPROM cancellata");
+}
+
 
 Command getCommand(const char* command)
 {
