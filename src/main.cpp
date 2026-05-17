@@ -34,6 +34,7 @@ const char * helpString =
 "get <parameter>            stampa il valore assegnato al parametro specificato\n"
 "get -a                     stampa tutti i parametri con il loro valore\n"
 "save                       salva i parametdi di configurazione\n"
+"clear                      cancella la confiurazione salvata"
 "exit                       chiude la configurazione\n"
 "Parametri disponibili:";
 
@@ -43,6 +44,7 @@ enum class Command
   SET,
   GET,
   SAVE,
+  CLEAR,
   EXIT,
   UNKNOWN
 };
@@ -93,12 +95,34 @@ bool saved = false;
 // put function declarations here:
 Command getCommand(const char* command);
 void serialCLI();
-bool makeChoice();
+bool saveParametersOnEEPROM();
+bool loadParametersFromEEPROM();
+void clearEEPROM();
+bool makeChoice(unsigned long timeoutMs = 0);
 
 void setup() 
 {
   Serial.begin(115200);
-  serialCLI();
+  if (loadParametersFromEEPROM())  
+  {    
+    Serial.println("Configurazione caricata da EEPROM:");    
+    for (int i = 0; i < NUM_PARAMS; i++)    
+    {      
+      Serial.printf("  %s: %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);    
+    }    
+    Serial.println();    
+    saved = true;
+    Serial.println("Modificare parametri di configurazione?[y/n]");
+    if (makeChoice(10000)) 
+    {
+      serialCLI();
+    }
+    } else  
+    {    
+      Serial.println("Nessuna configurazione trovata, usando valori di default. Avvio CLI...\n");  
+      serialCLI();
+    }
+  Serial.print("Configurazione terminata!");
 }
 
 void loop() 
@@ -176,6 +200,7 @@ Command getCommand(const char* command)
   if (strcmp(command, "set") == 0) return Command::SET;
   if (strcmp(command, "get") == 0) return Command::GET;
   if (strcmp(command, "save") == 0) return Command::SAVE;
+  if (strcmp(command, "clear") == 0) return Command::CLEAR;
   if (strcmp(command, "exit") == 0) return Command::EXIT;
   return Command::UNKNOWN;
 }
@@ -201,31 +226,61 @@ bool validatePort(const char* value)
   return p > 0 && p <= 65535;
 }
 
-bool makeChoice()
+bool makeChoice(unsigned long timeoutMs)
 {
+  unsigned long startTime = millis();
+  unsigned long lastPrint = 0;
+  
   while (!Serial.available()) 
   {
-    delay(10);    
+    delay(10);
+    
+    // Se timeout attivo
+    if (timeoutMs > 0)
+    {
+      unsigned long elapsed = millis() - startTime;
+      
+      // Timeout scaduto
+      if (elapsed >= timeoutMs)
+      {
+        Serial.println("\nTimeout scaduto. Operazione annullata.");
+        return false;
+      }
+      
+      // Stampa countdown ogni secondo
+      if (elapsed - lastPrint >= 1000)
+      {
+        unsigned long remaining = (timeoutMs - elapsed) / 1000;
+        Serial.printf("\rTempo rimanente: %lu secondi\n", remaining);
+        lastPrint = elapsed;
+      }
+    }
   }
-
+  
+  Serial.println();
+  
   String input = Serial.readStringUntil('\n');  
   input.trim();    
+  
   if (input.length() == 0)   
   {    
     Serial.println("Operazione annullata.");    
     return false;  
   }
+  
   char choice = toupper(input.charAt(0));
   
   if (choice == 'Y')
   {
     return true;
-  } else
+  } 
+  else
   {
     Serial.println("Operazione annullata.");  
     return false;
   }
 }
+
 
 void printHelp()
 {
@@ -311,6 +366,11 @@ bool isConfigComplete()
 
 void handleSave()
 {
+  if (saved)
+  {
+    Serial.println("Nulla da salvare!");
+    return;
+  }
   if (!isConfigComplete())
   {
     Serial.print("Ci sono parametri non ancora inizializzati, ");
@@ -319,7 +379,15 @@ void handleSave()
   if (makeChoice()) 
   {
     Serial.println("Avvio procedura di salvataggio...");
-    // saveParametersOnEEPROM(parameters);
+    if (saveParametersOnEEPROM())    
+    {      
+      saved = true;
+      Serial.println("Configurazione salvata con successo!");    
+    }    
+    else    
+    {      
+      Serial.println("ERRORE: Salvataggio fallito!");    
+    }
   }
 }
 
@@ -349,6 +417,7 @@ bool handleExit()
 
 void serialCLI()
 {
+  printHelp();
   while (true)
   {
     Serial.print("> ");
@@ -365,7 +434,6 @@ void serialCLI()
     char *token;
     char *parameter = NULL;
     char *value = NULL;
-    IPAddress ipA;
     token = strtok(buffer, delimiter);
     if (token == NULL) 
     {
@@ -387,6 +455,20 @@ void serialCLI()
         break;
       case Command::SAVE:
         handleSave();
+        break;
+      case Command::CLEAR:
+        Serial.println("ATTENZIONE! Stai per cancellare la configurazione salvata. Proseguire?[y/n]");  
+        if (makeChoice())  
+        {    
+          clearEEPROM();
+          for (int i = 0; i < NUM_PARAMS; i++)
+          {
+            strncpy((char*)paramTable[i].valuePtr, (char*)paramTable[i].defaultValue, paramTable[i].maxSize - 1);      
+            ((char*)paramTable[i].valuePtr)[paramTable[i].maxSize - 1] = '\0';      
+            Serial.printf("%s impostato a %s\n", (char*)paramTable[i].name, (char*)paramTable[i].defaultValue);
+          }
+          saved = false;  
+        }  
         break;
       case Command::EXIT:
         if (handleExit()) return;
