@@ -11,7 +11,7 @@ const char * helpString =
 "get -a                     stampa tutti i parametri con il loro valore\n"
 "save                       salva i parametdi di configurazione\n"
 "exit                       chiude la configurazione\n"
-"";
+"Parametri disponibili:";
 
 enum class Command 
 {
@@ -20,13 +20,6 @@ enum class Command
   GET,
   SAVE,
   EXIT,
-  UNKNOWN
-};
-
-enum class Parameter 
-{
-  ID,
-  IP,
   UNKNOWN
 };
 
@@ -50,17 +43,24 @@ struct Parameters parameters =
 {
   "void", 
   "000.000.000.000",
+  "8080",
 };
 
-
+const ParamDescriptor paramTable[] = 
+{  
+  {"id", parameters.id, sizeof(parameters.id), validateID, "void"},  
+  {"ip", parameters.ip, sizeof(parameters.ip), validateIP, "000.000.000.000"},  
+  {"port", parameters.port, sizeof(parameters.port), validatePort, "8080"}
+};
+const int NUM_PARAMS = sizeof(paramTable) / sizeof(paramTable[0]);
+bool saved = false;
 
 // put function declarations here:
+bool validateID(const char* value);
+bool validateIP(const char* value);
+bool validatePort(const char* value);
 Command getCommand(const char* command);
-
-Parameter getParameter(const char* parameter);
-
 void serialCLI();
-
 bool makeChoice();
 
 void setup() 
@@ -82,13 +82,6 @@ Command getCommand(const char* command)
   if (strcmp(command, "save") == 0) return Command::SAVE;
   if (strcmp(command, "exit") == 0) return Command::EXIT;
   return Command::UNKNOWN;
-}
-
-Parameter getParameter(const char* parameter)
-{
-  if (strcmp(parameter, "id") == 0) return Parameter::ID;
-  if (strcmp(parameter, "ip") == 0) return Parameter::IP;
-  return Parameter::UNKNOWN;
 }
 
 bool validateIP(const char* value) 
@@ -121,7 +114,7 @@ bool makeChoice()
 
   char choice = Serial.read();
 
-  while (Serial.available() && (choice == '\n' || choice == '\r')) 
+  while (Serial.available()) 
   {        
     choice = Serial.read();    
   }
@@ -136,6 +129,125 @@ bool makeChoice()
     Serial.println("Operazione annullata.");  
     return false;
   }
+}
+
+void printHelp()
+{
+  Serial.println(helpString);
+  for (int i = 0; i < NUM_PARAMS; i++)
+  {
+    Serial.printf("\t%s (default: %s)", paramTable[i].name, paramTable[i].defaultValue);
+  }
+}
+
+void handleSet(const char* paramName, const char* value)
+{        
+  if (paramName == NULL)
+  {
+    Serial.println("Attenzione! Un parametro dev'essere fornito!");
+    return;
+  }
+
+
+  for (int i = 0; i < NUM_PARAMS; i++)
+  {
+    if (strcmp(paramName, paramTable[i].name) == 0)
+    {
+      if (value == NULL)
+      {
+        Serial.printf("Attenzione! Un valore per %s dev'essere fornito!\n", paramName);
+        return;
+      }
+      if (paramTable[i].validator && !paramTable[i].validator(value))
+      {
+        Serial.printf("Attenzione! Valore non valido per '%s'!\n", paramName);        
+        return;
+      }
+
+      strncpy((char*)paramTable[i].valuePtr, value, paramTable[i].maxSize - 1);      
+      ((char*)paramTable[i].valuePtr)[paramTable[i].maxSize - 1] = '\0';      
+      Serial.printf("%s impostato a %s\n", paramName, value);      
+      return;
+
+    }
+  }
+  Serial.println("ATTENZIONE: Parametro sconosciuto!");
+}
+
+void handleGet(const char* paramName)
+{
+  if (paramName == NULL)
+  {
+    Serial.println("Attenzione! Un parametro dev'essere fornito!");
+    return;
+  }
+  if (strcmp(paramName, "-a") == 0)
+  {
+    for (int i = 0; i < NUM_PARAMS; i++)
+    {
+      Serial.printf("%s:  %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);
+    }
+    return;
+  }
+  for (int i = 0; i < NUM_PARAMS; i++)   
+  {    
+    if (strcmp(paramTable[i].name, paramName) == 0)     
+    {      
+      Serial.printf("%s:  %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);
+      return;    
+    }  
+  }  
+  Serial.println("ATTENZIONE: Parametro sconosciuto!");
+}
+
+bool isConfigComplete() 
+{
+  for (int i = 0; i < NUM_PARAMS; i++) 
+  {
+    if (strcmp((char*)paramTable[i].valuePtr, paramTable[i].defaultValue) == 0) 
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void handleSave()
+{
+  if (!isConfigComplete())
+  {
+    Serial.print("Ci sono parametri non ancora inizializzati,");
+  }
+  Serial.print("Proseguire?[y/n]\n");
+  if (makeChoice()) 
+  {
+    Serial.println("Avvio procedura di salvataggio...");
+    // saveParametersOnEEPROM(parameters);
+  }
+}
+
+bool handleExit()
+{
+  if (!isConfigComplete())
+  {
+    Serial.println("Impossibile proseguire, configurazione non terminata. Ritentare dopo aver inizializzato tutti i parametri!");
+    return false;
+  }
+  if (!saved)
+  {
+    Serial.println("Attenzione! Non hai ancora salvato, vuoi salvare ora?[y/n]");
+    if (makeChoice()) 
+    {
+      handleSave();
+    } 
+  }
+  Serial.println("Uscire dal prompt di configurazione?[y/n]");
+  if (makeChoice()) 
+  {
+    Serial.println("Exiting...");
+    return true;
+  }
+  return false;
 }
 
 void serialCLI()
@@ -155,8 +267,7 @@ void serialCLI()
     const char delimiter[] = " ";
     char *token;
     char *parameter = NULL;
-    char *ip = NULL;
-    char *id = NULL;
+    char *value = NULL;
     IPAddress ipA;
     token = strtok(buffer, delimiter);
     if (token == NULL) 
@@ -167,99 +278,22 @@ void serialCLI()
     switch (getCommand(token))
     {
       case Command::HELP:
-        Serial.println(helpString);
+        printHelp();
         break;
       case Command::SET:
         parameter = strtok(NULL, delimiter);
-        if (parameter == NULL)
-        {
-          Serial.println("Attenzione! Un parametro dev'essere fornito!");
-          break;
-        }
-        switch (getParameter(parameter))
-        {
-          case Parameter::ID :
-            id = strtok(NULL, delimiter);
-            if (id == NULL)
-            {
-              Serial.println("Attenzione! Un valore per l'ID dev'essere fornito!");
-              break;
-            }
-            strcpy(parameters.id, id);
-            Serial.printf("ID set to %s\n", id);
-            break;
-          case Parameter::IP:
-            ip = strtok(NULL, delimiter);
-            if (ip== NULL)
-            {
-              Serial.println("Attenzione! Un valore per l'IP dev'essere fornito!");
-              break;
-            }
-            if (!ipA.fromString(ip))
-            {
-              Serial.println("Attenzione! Fornire un IP valido!");
-              break;
-            }
-            strcpy(parameters.ip, ip);
-            Serial.printf("IP set to %s\n", ip);
-            break;
-          default:
-            Serial.println("ATTENZIONE: Parametro sconosciuto!");
-            break;
-        }
-        break;  
+        value = strtok(NULL, delimiter);
+        handleSet(parameter, value);
+        break;
       case Command::GET:
         parameter = strtok(NULL, delimiter);
-        if (parameter == NULL)
-        {
-          Serial.println("Attenzione! Un parametro dev'essere fornito!");
-          break;
-        }
-        if (strcmp(parameter, "-a") == 0)
-        {
-            Serial.printf("ID: %s\n", parameters.id);
-
-            Serial.printf("IP: %s\n", parameters.ip);
-            break;
-        }
-        switch (getParameter(parameter))
-        {
-          case Parameter::ID :
-            Serial.println(parameters.id);
-            break;
-          case Parameter::IP:
-            Serial.println(parameters.ip);
-            break;
-          default:
-            Serial.println("ATTENZIONE: Parametro sconosciuto!");
-            break;
-        }
+        handleGet(parameter);
         break;
       case Command::SAVE:
-        if (strcmp(parameters.id, "void") == 0) Serial.print("ID non inizializzato, ");
-        if (strcmp(parameters.ip, "000.000.000.000") == 0) Serial.print("IP non inizializzato, ");
-        Serial.print("Proseguire?[y/N]\n");
-        if (makeChoice()) 
-        {
-          Serial.println("Avvio procedura di salvataggio...");
-          // saveParametersOnEEPROM(parameters);
-        }
-
+        handleSave();
         break;
       case Command::EXIT:
-        
-        if (strcmp(parameters.id, "void") == 0 || strcmp(parameters.ip, "000.000.000.000") == 0)
-        {
-          Serial.println("Impossibile proseguire, configurazione non terminata. Ritentare dopo aver inizializzato tutti i parametri!");
-        } else
-        {
-          Serial.println("Uscire dal prompt di configurazione?[y/N]");
-          if (makeChoice()) 
-          {
-            Serial.println("Exiting...");
-            return;
-          }
-        }
+        if (handleExit()) return;
         break;
       default:
         Serial.println("ATTENZIONE: Comando sconosciuto! Inserire 'help' per conoscere i comandi disponibili.");
