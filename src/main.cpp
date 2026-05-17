@@ -136,7 +136,7 @@ void printHelp()
   Serial.println(helpString);
   for (int i = 0; i < NUM_PARAMS; i++)
   {
-    Serial.printf("\t%s (default: %s)", paramTable[i].name, paramTable[i].defaultValue);
+    Serial.printf("\t%s (default: %s)\n", paramTable[i].name, paramTable[i].defaultValue);
   }
 }
 
@@ -166,7 +166,8 @@ void handleSet(const char* paramName, const char* value)
 
       strncpy((char*)paramTable[i].valuePtr, value, paramTable[i].maxSize - 1);      
       ((char*)paramTable[i].valuePtr)[paramTable[i].maxSize - 1] = '\0';      
-      Serial.printf("%s impostato a %s\n", paramName, value);      
+      Serial.printf("%s impostato a %s\n", paramName, value);
+      saved = false;      
       return;
 
     }
@@ -235,7 +236,7 @@ bool handleExit()
   }
   if (!saved)
   {
-    Serial.println("Attenzione! Non hai ancora salvato, vuoi salvare ora?[y/n]");
+    Serial.println("Attenzione! Ci sono modifiche non salvate, vuoi salvare ora?[y/n]");
     if (makeChoice()) 
     {
       handleSave();
