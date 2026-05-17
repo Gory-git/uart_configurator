@@ -1,6 +1,30 @@
 #include <Arduino.h>
 #include <string.h>
 #include <IPAddress.h>
+#include <EEPROM.h>
+
+#if defined(ESP32)  
+  #include <esp_crc.h>  
+  #define CALC_CRC32(data, len) esp_crc32_le(0, (uint8_t*)(data), (len))
+  #else 
+  uint32_t crc32(const uint8_t* data, size_t length)  
+  {    uint32_t crc = 0xFFFFFFFF;    
+    for (size_t i = 0; i < length; i++)    
+    {      
+      crc ^= data[i];      
+      for (uint8_t j = 0; j < 8; j++)      
+      {        
+        crc = (crc >> 1) ^ (0xEDB88320 & -(crc & 1));      
+      }    
+    }    
+    return ~crc;  
+  }  
+  #define CALC_CRC32(data, len) crc32((const uint8_t*)(data), (len))
+#endif
+
+#define EEPROM_SIZE 512        // Dimensione totale (su ESP32/ESP8266)
+#define EEPROM_START_ADDR 0    // Indirizzo di inizio
+#define MAGIC_NUMBER 0xABCD
 
 const char * helpString = 
 "Serial Configurator\n"
@@ -39,26 +63,34 @@ struct Parameters
   char port[6];
 };
 
+struct EEPROMData 
+{  
+  uint16_t magic;  
+  Parameters params;  
+  uint32_t crc;
+};
+
+bool validateID(const char* value);
+bool validateIP(const char* value);
+bool validatePort(const char* value);
+
 struct Parameters parameters = 
 {
   "void", 
   "000.000.000.000",
-  "8080",
+  "0",
 };
 
 const ParamDescriptor paramTable[] = 
 {  
   {"id", parameters.id, sizeof(parameters.id), validateID, "void"},  
   {"ip", parameters.ip, sizeof(parameters.ip), validateIP, "000.000.000.000"},  
-  {"port", parameters.port, sizeof(parameters.port), validatePort, "8080"}
+  {"port", parameters.port, sizeof(parameters.port), validatePort, "0"}
 };
 const int NUM_PARAMS = sizeof(paramTable) / sizeof(paramTable[0]);
 bool saved = false;
 
 // put function declarations here:
-bool validateID(const char* value);
-bool validateIP(const char* value);
-bool validatePort(const char* value);
 Command getCommand(const char* command);
 void serialCLI();
 bool makeChoice();
@@ -72,6 +104,49 @@ void setup()
 void loop() 
 {
 
+}
+
+bool saveParametersOnEEPROM(const Parameters& params)
+{  
+  EEPROMData data;  data.magic = MAGIC_NUMBER;  
+  data.params = params;  
+  data.crc = CALC_CRC32(&params, sizeof(Parameters));    
+  #if defined(ESP32) || defined(ESP8266)    
+    EEPROM.begin(EEPROM_SIZE);  
+  #endif    
+  EEPROM.put(EEPROM_START_ADDR, data);    
+  #if defined(ESP32) || defined(ESP8266)    
+    bool success = EEPROM.commit();    
+    EEPROM.end();    
+    return success;  
+  #else    
+    return true;  
+  #endif
+}
+
+bool loadParametersFromEEPROM(Parameters& params)
+{  
+  EEPROMData data;    
+  #if defined(ESP32) || defined(ESP8266)    
+    EEPROM.begin(EEPROM_SIZE);  
+  #endif    
+  EEPROM.get(EEPROM_START_ADDR, data);    
+  #if defined(ESP32) || defined(ESP8266)    
+    EEPROM.end();  
+  #endif    
+  if (data.magic != MAGIC_NUMBER)  
+  {    
+    Serial.println("EEPROM non inizializzata");    
+    return false;  
+  }    
+  uint32_t calculatedCRC = CALC_CRC32(&data.params, sizeof(Parameters));  
+  if (data.crc != calculatedCRC)  
+  {    
+    Serial.println("EEPROM corrotta");    
+    return false;  
+  }    
+  params = data.params;  
+  return true;
 }
 
 Command getCommand(const char* command)
@@ -112,14 +187,14 @@ bool makeChoice()
     delay(10);    
   }
 
-  char choice = Serial.read();
-
-  while (Serial.available()) 
-  {        
-    choice = Serial.read();    
+  String input = Serial.readStringUntil('\n');  
+  input.trim();    
+  if (input.length() == 0)   
+  {    
+    Serial.println("Operazione annullata.");    
+    return false;  
   }
-
-  choice = toupper(choice);
+  char choice = toupper(input.charAt(0));
   
   if (choice == 'Y')
   {
@@ -217,7 +292,7 @@ void handleSave()
 {
   if (!isConfigComplete())
   {
-    Serial.print("Ci sono parametri non ancora inizializzati,");
+    Serial.print("Ci sono parametri non ancora inizializzati, ");
   }
   Serial.print("Proseguire?[y/n]\n");
   if (makeChoice()) 
@@ -273,7 +348,6 @@ void serialCLI()
     token = strtok(buffer, delimiter);
     if (token == NULL) 
     {
-      //Serial.println("Attenzione! Un comando dev'essere fornito!");
       continue;
     }
     switch (getCommand(token))
