@@ -8,7 +8,8 @@
   #define CALC_CRC32(data, len) esp_crc32_le(0, (uint8_t*)(data), (len))
   #else 
   uint32_t crc32(const uint8_t* data, size_t length)  
-  {    uint32_t crc = 0xFFFFFFFF;    
+  {    
+    uint32_t crc = 0xFFFFFFFF;    
     for (size_t i = 0; i < length; i++)    
     {      
       crc ^= data[i];      
@@ -34,7 +35,7 @@ const char * helpString =
 "get <parameter>            stampa il valore assegnato al parametro specificato\n"
 "get -a                     stampa tutti i parametri con il loro valore\n"
 "save                       salva i parametdi di configurazione\n"
-"clear                      cancella la confiurazione salvata\n"
+"clear                      cancella la configurazione salvata\n"
 "exit                       chiude la configurazione\n"
 "Parametri disponibili:";
 
@@ -479,3 +480,9 @@ void serialCLI()
     }
   }
 }
+
+/* TODO list
+ * rendere una libreria
+ * scrivere una versione non bloccante che gira in background
+ * valutare l'aggiunta dei parametri di configurazione da linea di comando 
+ */
