@@ -488,4 +488,6 @@ void serialCLI()
  * migliorare parsing
  * migliorare validazione
  * rendere modulare
+ * aggiungere wear leveling (rotazione degli indirizzi di scrittura per una maggiore durata della eeprom)
+ * controllare sicurezza del codice (buffer o stack oerflow, stringhe ecc.)
  */
