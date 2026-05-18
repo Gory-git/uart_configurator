@@ -485,4 +485,7 @@ void serialCLI()
  * rendere una libreria
  * scrivere una versione non bloccante che gira in background
  * valutare l'aggiunta dei parametri di configurazione da linea di comando 
+ * migliorare parsing
+ * migliorare validazione
+ * rendere modulare
  */
