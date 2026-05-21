@@ -14,8 +14,11 @@ class UartConfigurator
         bool exit();
         bool isConfigComplete();
         bool makeChoice(unsigned long timeoutMs = 0);
+        void printAllParams() const;
     private:
         Parameters parameters;
         EEPROMManager eeprom;
         bool saved = false;
+        static constexpr int NUM_PARAMS = 3;
+        ParamDescriptor paramTable[3];
 };

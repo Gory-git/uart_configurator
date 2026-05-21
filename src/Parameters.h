@@ -8,11 +8,13 @@ struct Parameters {
 
     void resetDefaults();
     static const Parameters& defaults();
-    bool validateID(const char* val) const;
-    bool validateIP(const char* val) const;
-    bool validatePort(const char* val) const;
-    bool validateAny(const char* val) const;
 };
+
+bool validateID(const char*);
+bool validateIP(const char*);
+bool validatePort(const char*);
+bool validateAny(const char*);
+
 struct ParamDescriptor 
 {
     const char* name;
@@ -21,6 +23,6 @@ struct ParamDescriptor
     bool (*validator)(const char*);
     const char* defaultValue;
 };
-extern const ParamDescriptor paramTable[];
-extern const int NUM_PARAMS;
-extern Parameters parameters;
+// extern const ParamDescriptor paramTable[];
+// extern const int NUM_PARAMS;
+// extern Parameters parameters;

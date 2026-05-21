@@ -40,12 +40,3 @@ bool validateAny(const char* value)
 {  
   return value != NULL && strlen(value) > 0;
 }
-
-const ParamDescriptor paramTable[] = 
-{  
-  {"id", parameters.id, sizeof(parameters.id), validateID, "void"},  
-  {"ip", parameters.ip, sizeof(parameters.ip), validateIP, "000.000.000.000"},  
-  {"port", parameters.port, sizeof(parameters.port), validatePort, "0"}
-};
-
-const int NUM_PARAMS = sizeof(paramTable) / sizeof(paramTable[0]);

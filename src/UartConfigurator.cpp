@@ -1,21 +1,25 @@
 #include "UartConfigurator.h"
 
-UartConfigurator::UartConfigurator()
+UartConfigurator::UartConfigurator() : parameters(), eeprom(), saved(false)
 {
-    if (!eeprom.load(parameters)) 
-    {
-        parameters.resetDefaults();
-        saved = false;
-    } else 
-    {
-        Serial.println("Configurazione caricata da EEPROM:");    
-        for (int i = 0; i < NUM_PARAMS; i++)    
-        {      
-            Serial.printf("  %s: %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);    
-        }    
-        Serial.println();
-        saved = true;
-    }
+    paramTable[0] = {"id", parameters.id, sizeof(parameters.id), validateID, "void"};
+    paramTable[1] = {"ip", parameters.ip, sizeof(parameters.ip), validateIP, "000.000.000.000"};
+    paramTable[2] = {"port", parameters.port, sizeof(parameters.port), validatePort, "0"};
+
+  if (!eeprom.load(parameters)) 
+  {
+      parameters.resetDefaults();
+      saved = false;
+  } else 
+  {
+      Serial.println("Configurazione caricata da EEPROM:");    
+      for (int i = 0; i < NUM_PARAMS; i++)    
+      {      
+          Serial.printf("  %s: %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);    
+      }    
+      Serial.println();
+      saved = true;
+  }
 }
 
 bool UartConfigurator::setParameter(const char* paramName, const char* value)
@@ -51,7 +55,6 @@ bool UartConfigurator::setParameter(const char* paramName, const char* value)
   Serial.println("ATTENZIONE: Parametro sconosciuto!");
   return false;
 }
-
 
 bool UartConfigurator::getParameter(const char* paramName) const
 {
@@ -223,4 +226,12 @@ bool UartConfigurator::makeChoice(unsigned long timeoutMs)
     Serial.println("Operazione annullata.");  
     return false;
   }
+}
+
+void UartConfigurator::printAllParams() const
+{
+    for (int i = 0; i < NUM_PARAMS; i++)
+    {
+        Serial.printf("\t%s (default: %s)\n", paramTable[i].name, paramTable[i].defaultValue);
+    }
 }
