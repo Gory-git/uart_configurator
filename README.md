@@ -266,7 +266,7 @@ help                       stampa questo messaggio di aiuto
 set <parameter> <value>    imposta un determinato parametro al valore specificato
 get <parameter>            stampa il valore assegnato al parametro specificato
 get -a                     stampa tutti i parametri con il loro valore
-save                       salva i parametdi di configurazione
+save                       salva i parametri di configurazione
 clear                      cancella la configurazione salvata
 exit                       chiude la configurazione
 Parametri disponibili:

@@ -102,7 +102,7 @@ void SerialCLI::printHelp()
   "set <parameter> <value>    imposta un determinato parametro al valore specificato\n"
   "get <parameter>            stampa il valore assegnato al parametro specificato\n"
   "get -a                     stampa tutti i parametri con il loro valore\n"
-  "save                       salva i parametdi di configurazione\n"
+  "save                       salva i parametri di configurazione\n"
   "clear                      cancella la configurazione salvata\n"
   "exit                       chiude la configurazione\n"
   "Parametri disponibili:";
