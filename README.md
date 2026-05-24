@@ -105,9 +105,9 @@ This project is perfect for:
 │  - validators            │    │  - CRC32 validation         │
 │  - defaults              │    │                             │
 └──────────────────────────┘    └─────────────────────────────┘
-                                          │
-                                          ▼
-                                    EEPROM (Flash)
+                                                │
+                                                ▼
+                                        EEPROM (Flash)
 ```
 
 ### Component Overview
