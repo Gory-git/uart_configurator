@@ -2,7 +2,7 @@
 
 ![C++](https://img.shields.io/badge/Language-C%2B%2B-blue?style=flat-square) ![Platform](https://img.shields.io/badge/Platform-ESP32-orange?style=flat-square) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-A powerful, production-ready firmware configuration system for ESP32 microcontrollers that allows remote parameter management via UART serial interface, with persistent storage on EEPROM.
+A powerful, production-ready firmware configuration system for ESP32 microcontrollers that allows parameters management via UART serial interface, with persistent storage on EEPROM.
 
 ## 📋 Table of Contents
 
