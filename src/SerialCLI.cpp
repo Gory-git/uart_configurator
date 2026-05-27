@@ -15,17 +15,17 @@ void SerialCLI::begin()
 
   if (this->configurator.load())  
   {
-      Serial.println("Modificare parametri di configurazione?[y/n]");
+      Serial.println("Modify configuration parameters? [y/n]");
       if (this->configurator.makeChoice(10000)) 
       {
           handleInput();
       }
   } else  
   {    
-      Serial.println("Nessuna configurazione trovata, usando valori di default. Avvio CLI...\n");  
+      Serial.println("No configuration found, using default values. Starting CLI...\n");  
       handleInput();
   }
-  Serial.println("Configurazione terminata!");
+  Serial.println("Configuration complete!");
 }
 
 Parameters SerialCLI::getParameters()
@@ -93,7 +93,7 @@ void SerialCLI::handleInput()
         if (this->configurator.exit()) return;
         break;
       default:
-        Serial.println("ATTENZIONE: Comando sconosciuto! Inserire 'help' per conoscere i comandi disponibili.");
+        Serial.println("ERROR: Unknown command! Type 'help' to see available commands.");
         break;
     }
   }
@@ -104,14 +104,14 @@ void SerialCLI::printHelp()
   const char * helpString = 
   "Serial Configurator\n"
   "USAGE:\n"
-  "help                       stampa questo messaggio di aiuto\n"
-  "set <parameter> <value>    imposta un determinato parametro al valore specificato\n"
-  "get <parameter>            stampa il valore assegnato al parametro specificato\n"
-  "get -a                     stampa tutti i parametri con il loro valore\n"
-  "save                       salva i parametri di configurazione\n"
-  "clear                      cancella la configurazione salvata\n"
-  "exit                       chiude la configurazione\n"
-  "Parametri disponibili:";
+  "help                       print this help message\n"
+  "set <parameter> <value>    set a parameter to a specified value\n"
+  "get <parameter>            print the value of a parameter\n"
+  "get -a                     print all parameters and their values\n"
+  "save                       save configuration parameters to EEPROM\n"
+  "clear                      delete saved configuration\n"
+  "exit                       close configuration prompt\n"
+  "Available parameters:";
 
   Serial.println(helpString);
   configurator.printAllParams();

@@ -62,7 +62,7 @@ Without UART Configurator, you'd need to recompile firmware 50 times. With it, y
 | **Type-Safe Storage** | Parameters stored in strongly-typed `Parameters` struct |
 | **Timeout Support** | Optional countdown timer for batch configuration operations |
 | **Change Tracking** | Prevents accidental saves; tracks unsaved changes |
-| **User Feedback** | Comprehensive validation error messages in Italian |
+| **User Feedback** | Comprehensive validation error messages in English |
 | **Easy Extensibility** | Simple pattern for adding new parameters and validators |
 
 ---
@@ -247,12 +247,12 @@ pio device monitor
 
 Expected output:
 ```
-Configurazione caricata da EEPROM:
+Configuration loaded from EEPROM:
   id: void
   ip: 000.000.000.000
   port: 0
 
-Modificare parametri di configurazione?[y/n]
+Modify configuration parameters? [y/n]
 ```
 
 ### 4. First Configuration
@@ -262,26 +262,26 @@ Press `y` to enter the CLI:
 > help
 Serial Configurator
 USAGE:
-help                       stampa questo messaggio di aiuto
-set <parameter> <value>    imposta un determinato parametro al valore specificato
-get <parameter>            stampa il valore assegnato al parametro specificato
-get -a                     stampa tutti i parametri con il loro valore
-save                       salva i parametri di configurazione
-clear                      cancella la configurazione salvata
-exit                       chiude la configurazione
-Parametri disponibili:
+help                       print this help message
+set <parameter> <value>    set a parameter to a specified value
+get <parameter>            print the value of a parameter
+get -a                     print all parameters and their values
+save                       save configuration parameters to EEPROM
+clear                      delete saved configuration
+exit                       close configuration prompt
+Available parameters:
 	id (default: void)
 	ip (default: 000.000.000.000)
 	port (default: 0)
 
 > set id DEVICE_001
-id impostato a DEVICE_001
+id set to DEVICE_001
 
 > set ip 192.168.1.100
-ip impostato a 192.168.1.100
+ip set to 192.168.1.100
 
 > set port 8080
-port impostato a 8080
+port set to 8080
 
 > get -a
 id:  DEVICE_001
@@ -289,25 +289,26 @@ ip:  192.168.1.100
 port:  8080
 
 > save
-Avvio procedura di salvataggio...
-Configurazione salvata con successo!
+Starting save procedure...
+Configuration saved successfully!
 
 > exit
-Uscire dal prompt di configurazione?[y/n]
+Exit configuration prompt? [y/n]
 y
-Configurazione terminata!
+Exiting...
+Configuration complete!
 ```
 
 ### 5. Next Boot
 
 On the next boot, the saved configuration will be loaded automatically:
 ```
-Configurazione caricata da EEPROM:
+Configuration loaded from EEPROM:
   id: DEVICE_001
   ip: 192.168.1.100
   port: 8080
 
-Modificare parametri di configurazione?[y/n]
+Modify configuration parameters? [y/n]
 ```
 
 Press `n` to skip configuration and proceed with your application.
@@ -370,10 +371,10 @@ Set a parameter to a new value. Value is validated before storing.
 
 ```
 > set id MY_SENSOR_01
-id impostato a MY_SENSOR_01
+id set to MY_SENSOR_01
 
 > set port 9000
-port impostato a 9000
+port set to 9000
 ```
 
 **Validation Rules:**
@@ -384,7 +385,7 @@ port impostato a 9000
 If validation fails:
 ```
 > set port 70000
-Attenzione! Valore non valido per 'port'!
+Warning! Invalid value for 'port'!
 ```
 
 ### `get <parameter>`
@@ -415,8 +416,8 @@ Save current configuration to EEPROM. Will ask for confirmation if:
 
 ```
 > save
-Avvio procedura di salvataggio...
-Configurazione salvata con successo!
+Starting save procedure...
+Configuration saved successfully!
 ```
 
 ### `clear`
@@ -424,9 +425,9 @@ Erase saved configuration from EEPROM and reset all parameters to defaults. **Re
 
 ```
 > clear
-ATTENZIONE! Stai per cancellare la configurazione salvata. Proseguire?[y/n]
+WARNING! You are about to delete the saved configuration. Continue? [y/n]
 y
-Configurazione cancellata. Tutti i parametri ripristinati ai valori di default.
+Configuration cleared. All parameters reset to default values.
 ```
 
 ### `exit`
@@ -434,10 +435,10 @@ Exit the configuration prompt. Will ask to save unsaved changes.
 
 ```
 > exit
-Uscire dal prompt di configurazione?[y/n]
+Exit configuration prompt? [y/n]
 y
 Exiting...
-Configurazione terminata!
+Configuration complete!
 ```
 
 ---
@@ -553,13 +554,13 @@ pio device monitor
 Test the new parameter:
 ```
 > set sensor_interval 120
-sensor_interval impostato a 120
+sensor_interval set to 120
 
 > get sensor_interval
 sensor_interval:  120
 
 > set sensor_interval 1000
-Attenzione! Valore non valido per 'sensor_interval'!
+Warning! Invalid value for 'sensor_interval'!
 
 > get -a
 id:  void
@@ -640,13 +641,13 @@ bool validateLogLevel(const char* value)
 
 ```bash
 > set id TEMP_SENSOR_KITCHEN
-id impostato a TEMP_SENSOR_KITCHEN
+id set to TEMP_SENSOR_KITCHEN
 
 > set ip 192.168.1.50
-ip impostato a 192.168.1.50
+ip set to 192.168.1.50
 
 > set port 8888
-port impostato a 8888
+port set to 8888
 
 > get -a
 id:  TEMP_SENSOR_KITCHEN
@@ -654,7 +655,7 @@ ip:  192.168.1.50
 port:  8888
 
 > save
-Configurazione salvata con successo!
+Configuration saved successfully!
 
 > exit
 ```
@@ -670,13 +671,13 @@ Then repeat for each sensor with different IDs.
 ip:  192.168.1.999
 
 > set ip 192.168.1.100
-ip impostato a 192.168.1.100
+ip set to 192.168.1.100
 
 > get ip
 ip:  192.168.1.100
 
 > save
-Configurazione salvata con successo!
+Configuration saved successfully!
 ```
 
 ### Example 3: Reset to Defaults
@@ -685,7 +686,7 @@ Configurazione salvata con successo!
 
 ```bash
 > clear
-ATTENZIONE! Stai per cancellare la configurazione salvata. Proseguire?[y/n]
+WARNING! You are about to delete the saved configuration. Continue? [y/n]
 y
 
 > get -a
@@ -758,11 +759,11 @@ bool result = configurator.makeChoice(10000);
 
 Output:
 ```
-Modificare parametri di configurazione?[y/n]
-Tempo rimanente: 9 secondi
-Tempo rimanente: 8 secondi
+Modify configuration parameters? [y/n]
+Time remaining: 9 seconds
+Time remaining: 8 seconds
 ...
-Timeout scaduto. Operazione annullata.
+Timeout expired. Operation cancelled.
 ```
 
 ### Configuration Completeness Check
@@ -830,7 +831,7 @@ pio run -t upload
 
 ### Issue: Can't Save Configuration
 
-**Problem**: "Salvataggio fallito!" error
+**Problem**: "Save failed!" error
 
 **Causes**:
 - EEPROM full (unlikely)

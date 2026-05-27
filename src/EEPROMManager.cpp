@@ -72,13 +72,13 @@ bool EEPROMManager::load(Parameters& parameters)
     #endif    
     if (data.magic != MAGIC_NUMBER)  
     {    
-        Serial.println("EEPROM non inizializzata");    
+        Serial.println("EEPROM not initialized");    
         return false;  
     }    
     uint32_t calculatedCRC = calcCRC(data.params);  
     if (data.crc != calculatedCRC)  
     {    
-        Serial.println("EEPROM corrotta");    
+        Serial.println("EEPROM corrupted");    
         return false;  
     }    
     parameters = data.params;  
@@ -101,5 +101,5 @@ void EEPROMManager::clear()
         EEPROM.end();
     #endif
 
-    Serial.println("EEPROM cancellata");
+    Serial.println("EEPROM cleared");
 }

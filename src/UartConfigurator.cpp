@@ -13,7 +13,7 @@ UartConfigurator::UartConfigurator() : parameters(), eeprom(), saved(false)
       saved = false;
   } else 
   {
-      Serial.println("Configurazione caricata da EEPROM:");    
+      Serial.println("Configuration loaded from EEPROM:");    
       for (int i = 0; paramTable[i].name != nullptr; i++)    
       {      
           Serial.printf("  %s: %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);    
@@ -32,7 +32,7 @@ bool UartConfigurator::setParameter(const char* paramName, const char* value)
 {
   if (paramName == NULL)
   {
-    Serial.println("Attenzione! Un parametro dev'essere fornito!");
+    Serial.println("Warning! A parameter name must be provided!");
     return false;
   }
   for (int i = 0; paramTable[i].name != nullptr; i++)
@@ -41,24 +41,24 @@ bool UartConfigurator::setParameter(const char* paramName, const char* value)
     {
       if (value == NULL)
       {
-        Serial.printf("Attenzione! Un valore per %s dev'essere fornito!\n", paramName);
+        Serial.printf("Warning! A value for %s must be provided!\n", paramName);
         return false;
       }
       if (paramTable[i].validator && !paramTable[i].validator(value))
       {
-        Serial.printf("Attenzione! Valore non valido per '%s'!\n", paramName);        
+        Serial.printf("Warning! Invalid value for '%s'!\n", paramName);        
         return false;
       }
 
       strncpy((char*)paramTable[i].valuePtr, value, paramTable[i].maxSize - 1);      
       ((char*)paramTable[i].valuePtr)[paramTable[i].maxSize - 1] = '\0';      
-      Serial.printf("%s impostato a %s\n", paramName, value);
+      Serial.printf("%s set to %s\n", paramName, value);
       saved = false;      
       return true;
 
     }
   }
-  Serial.println("ATTENZIONE: Parametro sconosciuto!");
+  Serial.println("ERROR: Unknown parameter!");
   return false;
 }
 
@@ -66,7 +66,7 @@ bool UartConfigurator::getParameter(const char* paramName) const
 {
     if (paramName == NULL)
     {
-        Serial.println("Attenzione! Un parametro dev'essere fornito!");
+        Serial.println("Warning! A parameter name must be provided!");
         return false;
     }
     if (strcmp(paramName, "-a") == 0)
@@ -85,7 +85,7 @@ bool UartConfigurator::getParameter(const char* paramName) const
             return true;    
         }  
     }  
-    Serial.println("ATTENZIONE: Parametro sconosciuto!");
+    Serial.println("ERROR: Unknown parameter!");
     return false;
 }
 
@@ -93,26 +93,26 @@ bool UartConfigurator::save()
 {  
     if (saved)
     {
-        Serial.println("Nulla da salvare!");
+        Serial.println("Nothing to save!");
         return false;
     }
     if (!isConfigComplete())
     {
-        Serial.print("Ci sono parametri non ancora inizializzati, ");
+        Serial.print("There are parameters that have not been initialized yet. ");
     }
-        Serial.print("Proseguire?[y/n]\n");
+        Serial.print("Continue? [y/n]\n");
     if (makeChoice()) 
     {
-        Serial.println("Avvio procedura di salvataggio...");
+        Serial.println("Starting save procedure...");
         if (eeprom.save(parameters))
         {      
             saved = true;
-            Serial.println("Configurazione salvata con successo!");    
+            Serial.println("Configuration saved successfully!");    
             return true;
         }    
         else    
         {      
-            Serial.println("ERRORE: Salvataggio fallito!");    
+            Serial.println("ERROR: Save failed!");    
             return false;
         }
     }
@@ -121,7 +121,7 @@ bool UartConfigurator::save()
 
 bool UartConfigurator::clear()
 {
-    Serial.println("ATTENZIONE! Stai per cancellare la configurazione salvata. Proseguire?[y/n]");  
+    Serial.println("WARNING! You are about to delete the saved configuration. Continue? [y/n]");  
     if (makeChoice())  
     {    
         eeprom.clear();
@@ -129,7 +129,7 @@ bool UartConfigurator::clear()
         {
             strncpy((char*)paramTable[i].valuePtr, (char*)paramTable[i].defaultValue, paramTable[i].maxSize - 1);      
             ((char*)paramTable[i].valuePtr)[paramTable[i].maxSize - 1] = '\0';      
-            Serial.printf("%s impostato a %s\n", (char*)paramTable[i].name, (char*)paramTable[i].defaultValue);
+            Serial.printf("%s set to %s\n", (char*)paramTable[i].name, (char*)paramTable[i].defaultValue);
         }
         saved = false;
         return true; 
@@ -147,18 +147,18 @@ bool UartConfigurator::exit()
 {
   if (!isConfigComplete())
   {
-    Serial.println("Impossibile proseguire, configurazione non terminata. Ritentare dopo aver inizializzato tutti i parametri!");
+    Serial.println("Cannot proceed, configuration incomplete. Try again after initializing all parameters!");
     return false;
   }
   if (!saved)
   {
-    Serial.println("Attenzione! Ci sono modifiche non salvate, vuoi salvare ora?[y/n]");
+    Serial.println("Warning! You have unsaved changes. Save now? [y/n]");
     if (makeChoice()) 
     {
       save();
     } 
   }
-  Serial.println("Uscire dal prompt di configurazione?[y/n]");
+  Serial.println("Exit configuration prompt? [y/n]");
   if (makeChoice()) 
   {
     Serial.println("Exiting...");
@@ -188,23 +188,23 @@ bool UartConfigurator::makeChoice(unsigned long timeoutMs)
   {
     delay(10);
     
-    // Se timeout attivo
+    // If timeout is active
     if (timeoutMs > 0)
     {
       unsigned long elapsed = millis() - startTime;
       
-      // Timeout scaduto
+      // Timeout expired
       if (elapsed >= timeoutMs)
       {
-        Serial.println("\nTimeout scaduto. Operazione annullata.");
+        Serial.println("\nTimeout expired. Operation cancelled.");
         return false;
       }
       
-      // Stampa countdown ogni secondo
+      // Print countdown every second
       if (elapsed - lastPrint >= 1000)
       {
         unsigned long remaining = (timeoutMs - elapsed) / 1000;
-        Serial.printf("\rTempo rimanente: %lu secondi\n", remaining);
+        Serial.printf("\rTime remaining: %lu seconds\n", remaining);
         lastPrint = elapsed;
       }
     }
@@ -217,7 +217,7 @@ bool UartConfigurator::makeChoice(unsigned long timeoutMs)
   
   if (input.length() == 0)   
   {    
-    Serial.println("Operazione annullata.");    
+    Serial.println("Operation cancelled.");    
     return false;  
   }
   
@@ -229,7 +229,7 @@ bool UartConfigurator::makeChoice(unsigned long timeoutMs)
   } 
   else
   {
-    Serial.println("Operazione annullata.");  
+    Serial.println("Operation cancelled.");  
     return false;
   }
 }
