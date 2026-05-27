@@ -5,6 +5,7 @@ UartConfigurator::UartConfigurator() : parameters(), eeprom(), saved(false)
     paramTable[0] = {"id", parameters.id, sizeof(parameters.id), validateID, "void"};
     paramTable[1] = {"ip", parameters.ip, sizeof(parameters.ip), validateIP, "000.000.000.000"};
     paramTable[2] = {"port", parameters.port, sizeof(parameters.port), validatePort, "0"};
+    paramTable[3] = {nullptr, nullptr, 0, nullptr, nullptr};  // Sentinel terminator
 
   if (!eeprom.load(parameters)) 
   {
@@ -13,13 +14,18 @@ UartConfigurator::UartConfigurator() : parameters(), eeprom(), saved(false)
   } else 
   {
       Serial.println("Configurazione caricata da EEPROM:");    
-      for (int i = 0; i < NUM_PARAMS; i++)    
+      for (int i = 0; paramTable[i].name != nullptr; i++)    
       {      
           Serial.printf("  %s: %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);    
       }    
       Serial.println();
       saved = true;
   }
+}
+
+Parameters UartConfigurator::getParameters()
+{
+  return parameters;
 }
 
 bool UartConfigurator::setParameter(const char* paramName, const char* value)
@@ -29,7 +35,7 @@ bool UartConfigurator::setParameter(const char* paramName, const char* value)
     Serial.println("Attenzione! Un parametro dev'essere fornito!");
     return false;
   }
-  for (int i = 0; i < NUM_PARAMS; i++)
+  for (int i = 0; paramTable[i].name != nullptr; i++)
   {
     if (strcmp(paramName, paramTable[i].name) == 0)
     {
@@ -65,13 +71,13 @@ bool UartConfigurator::getParameter(const char* paramName) const
     }
     if (strcmp(paramName, "-a") == 0)
     {
-        for (int i = 0; i < NUM_PARAMS; i++)
+        for (int i = 0; paramTable[i].name != nullptr; i++)
         {
             Serial.printf("%s:  %s\n", paramTable[i].name, (char*)paramTable[i].valuePtr);
         }
         return true;
     }
-    for (int i = 0; i < NUM_PARAMS; i++)   
+    for (int i = 0; paramTable[i].name != nullptr; i++)   
     {    
         if (strcmp(paramTable[i].name, paramName) == 0)     
         {      
@@ -119,7 +125,7 @@ bool UartConfigurator::clear()
     if (makeChoice())  
     {    
         eeprom.clear();
-        for (int i = 0; i < NUM_PARAMS; i++)
+        for (int i = 0; paramTable[i].name != nullptr; i++)
         {
             strncpy((char*)paramTable[i].valuePtr, (char*)paramTable[i].defaultValue, paramTable[i].maxSize - 1);      
             ((char*)paramTable[i].valuePtr)[paramTable[i].maxSize - 1] = '\0';      
@@ -163,7 +169,7 @@ bool UartConfigurator::exit()
 
 bool UartConfigurator::isConfigComplete()
 {
-  for (int i = 0; i < NUM_PARAMS; i++) 
+  for (int i = 0; paramTable[i].name != nullptr; i++) 
   {
     if (strcmp((char*)paramTable[i].valuePtr, paramTable[i].defaultValue) == 0) 
     {
@@ -230,7 +236,7 @@ bool UartConfigurator::makeChoice(unsigned long timeoutMs)
 
 void UartConfigurator::printAllParams() const
 {
-    for (int i = 0; i < NUM_PARAMS; i++)
+    for (int i = 0; paramTable[i].name != nullptr; i++)
     {
         Serial.printf("\t%s (default: %s)\n", paramTable[i].name, paramTable[i].defaultValue);
     }

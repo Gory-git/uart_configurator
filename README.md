@@ -314,6 +314,48 @@ Press `n` to skip configuration and proceed with your application.
 
 ---
 
+## 🔌 Parameter Access
+
+### Retrieving Parameters in Your Application
+
+After the UART Configurator finishes setup, you can retrieve the loaded parameters in your `main.cpp` using the `getParameters()` method:
+
+```cpp
+#include "SerialCLI.h"
+
+SerialCLI serialCLI;
+Parameters localParameters;
+
+void setup() 
+{
+  // Initialize the configurator
+  serialCLI.begin();
+  
+  // Retrieve the configured parameters
+  localParameters = serialCLI.getParameters();
+  
+  // Use the parameters in your application
+  Serial.print("Device ID: ");
+  Serial.println(localParameters.id);
+  
+  Serial.print("Server IP: ");
+  Serial.println(localParameters.ip);
+  
+  Serial.print("Server Port: ");
+  Serial.println(localParameters.port);
+  
+  // Now you can use your parameters to configure your network connection,
+  // sensor settings, or any other part of your application
+}
+
+void loop()
+{
+  // Your application logic here
+}
+```
+
+---
+
 ## 📟 CLI Commands Reference
 
 ### `help`
@@ -471,9 +513,19 @@ const Parameters defaultParameters =
 };
 ```
 
-#### Step 4: Register Parameter in `UartConfigurator.cpp`
+#### Step 4: Update Array Size in `UartConfigurator.h`
 
-In the constructor, add to the `paramTable`:
+The `paramTable` uses a **sentinel pattern** — the array needs one extra slot for the sentinel terminator:
+
+```cpp
+// In UartConfigurator.h
+private:
+    ParamDescriptor paramTable[5];  // Was 4 (3 original + 1 new + 1 sentinel)
+```
+
+#### Step 5: Register Parameter in `UartConfigurator.cpp` Constructor
+
+Add the new parameter **before the sentinel**, and move the sentinel down:
 
 ```cpp
 UartConfigurator::UartConfigurator() : parameters(), eeprom(), saved(false)
@@ -483,16 +535,13 @@ UartConfigurator::UartConfigurator() : parameters(), eeprom(), saved(false)
     paramTable[2] = {"port", parameters.port, sizeof(parameters.port), validatePort, "0"};
     paramTable[3] = {"sensor_interval", parameters.sensor_interval, 
                      sizeof(parameters.sensor_interval), validateSensorInterval, "60"};  // NEW
+    paramTable[4] = {nullptr, nullptr, 0, nullptr, nullptr};  // Sentinel (moved down)
     
     // ... rest of constructor
 }
 ```
 
-#### Step 5: Update NUM_PARAMS
-
-```cpp
-static constexpr int NUM_PARAMS = 4;  // Was 3
-```
+**Note:** The sentinel (`{nullptr, ...}`) is a **stop marker** for all loops. It automatically detects when to stop iterating, so no manual loop count is needed!
 
 #### Step 6: Rebuild and Test
 
@@ -511,7 +560,15 @@ sensor_interval:  120
 
 > set sensor_interval 1000
 Attenzione! Valore non valido per 'sensor_interval'!
+
+> get -a
+id:  void
+ip:  000.000.000.000
+port:  0
+sensor_interval:  120
 ```
+
+✅ **All loops automatically pick up the new parameter!** No hardcoded counts to update.
 
 ### Creating Custom Validators
 

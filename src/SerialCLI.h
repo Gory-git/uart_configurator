@@ -5,6 +5,7 @@ class SerialCLI {
     public:
         SerialCLI();
         void begin();
+        Parameters getParameters();
 
     private:
         enum class Command

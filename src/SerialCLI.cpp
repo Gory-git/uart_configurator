@@ -25,8 +25,14 @@ void SerialCLI::begin()
       Serial.println("Nessuna configurazione trovata, usando valori di default. Avvio CLI...\n");  
       handleInput();
   }
-  Serial.print("Configurazione terminata!");
+  Serial.println("Configurazione terminata!");
 }
+
+Parameters SerialCLI::getParameters()
+{
+  return configurator.getParameters();
+}
+
 
 SerialCLI::Command SerialCLI::getCommand(const char* command)
 {

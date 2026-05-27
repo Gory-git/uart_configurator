@@ -2,10 +2,22 @@
 #include "SerialCLI.h"
 
 SerialCLI serialCLI;
+Parameters localParameters;
+char* ip = "void";
+char* id = "void";
+char* port = "void";
 
 void setup() 
 {
   serialCLI.begin();
+  localParameters = serialCLI.getParameters();
+  ip = localParameters.ip;
+  id = localParameters.id;
+  port = localParameters.port;
+
+  Serial.println(ip);
+  Serial.println(id);
+  Serial.println(port);
 }
 
 void loop() 

@@ -15,10 +15,10 @@ class UartConfigurator
         bool isConfigComplete();
         bool makeChoice(unsigned long timeoutMs = 0);
         void printAllParams() const;
+        Parameters getParameters();
     private:
-        Parameters parameters;
         EEPROMManager eeprom;
+        Parameters parameters;
         bool saved = false;
-        static constexpr int NUM_PARAMS = 3;
-        ParamDescriptor paramTable[3];
+        ParamDescriptor paramTable[4];  // +1 for sentinel terminator
 };
